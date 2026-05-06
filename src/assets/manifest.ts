@@ -21,5 +21,5 @@ export const assetManifest: AssetManifest = {
   net: './assets/images/net/net.png',
   bgm: './assets/audio/bgm/bgm.mp3',
   hitSfx: './assets/audio/sfx/hit.mp3',
-  scoreSfx: './assets/audio/sfx/score.wav',
+  scoreSfx: './assets/audio/sfx/score.mp3',
 };

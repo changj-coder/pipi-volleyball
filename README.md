@@ -46,7 +46,7 @@ export type AssetManifest = {
 - `src/assets/court.png`
 - `src/assets/bgm.mp3`
 - `src/assets/hit.wav`
-- `src/assets/score.wav`
+- `src/assets/score.mp3`
 
 建議第一批正式素材尺寸：
 
@@ -70,7 +70,7 @@ export type AssetManifest = {
 - `public/assets/images/net/net.png`
 - `public/assets/audio/bgm/bgm.mp3`
 - `public/assets/audio/sfx/hit.mp3`
-- `public/assets/audio/sfx/score.wav`
+- `public/assets/audio/sfx/score.mp3`
 
 目前必要素材是角色待機 GIF、球、場景。電腦角色會先鏡像玩家，網柱找不到時可由程式繪製，音效可以後補。
 
@@ -78,4 +78,4 @@ SUNO 生成的音樂音效請下載後放到固定路徑，遊戲不會在瀏覽
 
 - `public/assets/audio/bgm/bgm.mp3`
 - `public/assets/audio/sfx/hit.wav`
-- `public/assets/audio/sfx/score.wav`
+- `public/assets/audio/sfx/score.mp3`

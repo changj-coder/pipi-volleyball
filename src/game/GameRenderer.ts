@@ -23,7 +23,7 @@ import {
   PLAYER_RADIUS_X,
   PLAYER_RADIUS_Y,
 } from './constants';
-import type { Ball, Player } from './types';
+import type { Ball, HitboxDebugFrame, Player } from './types';
 
 export class GameRenderer {
   readonly stage = new Container();
@@ -35,6 +35,7 @@ export class GameRenderer {
   private readonly ballShape = new Graphics();
   private readonly powerTrailShape = new Graphics();
   private readonly shadowShape = new Graphics();
+  private readonly debugShape = new Graphics();
   private readonly serveText = new Text({
     text: '',
     style: new TextStyle({
@@ -63,6 +64,7 @@ export class GameRenderer {
     this.stage.addChild(this.powerTrailShape);
     this.stage.addChild(this.ballShape);
     this.stage.addChild(this.serveText);
+    this.stage.addChild(this.debugShape);
     this.drawCourt();
   }
 
@@ -123,7 +125,13 @@ export class GameRenderer {
     }
   }
 
-  render(player: Player, cpu: Player, ball: Ball, stateLabel: string): void {
+  render(
+    player: Player,
+    cpu: Player,
+    ball: Ball,
+    stateLabel: string,
+    debugFrame: HitboxDebugFrame | null = null
+  ): void {
     this.frameCounter += 1;
     this.drawCourt();
     this.drawNet();
@@ -136,6 +144,7 @@ export class GameRenderer {
     this.serveText.text = stateLabel;
     this.serveText.x = GAME_WIDTH / 2 - this.serveText.width / 2;
     this.serveText.y = 12;
+    this.drawHitboxDebug(debugFrame);
   }
 
   private drawCourt(): void {
@@ -312,6 +321,49 @@ export class GameRenderer {
     if (this.ballHistory.length > 14) {
       this.ballHistory.length = 14;
     }
+  }
+
+  private drawHitboxDebug(debugFrame: HitboxDebugFrame | null): void {
+    this.debugShape.clear();
+
+    if (!debugFrame?.enabled) {
+      return;
+    }
+
+    for (const pixel of debugFrame.netMaskPixels) {
+      this.debugShape
+        .rect(pixel.x, pixel.y, pixel.size, pixel.size)
+        .fill({ color: 0x15d47a, alpha: 0.2 });
+    }
+
+    const fallback = debugFrame.fallbackNet;
+    this.debugShape
+      .moveTo(fallback.x, fallback.top)
+      .lineTo(fallback.x, fallback.bottom)
+      .stroke({ color: 0xffd447, width: fallback.radius * 2, alpha: 0.38 });
+    this.debugShape
+      .circle(fallback.x, fallback.top, fallback.radius)
+      .stroke({ color: 0xffd447, width: 1.5, alpha: 0.7 });
+    this.debugShape
+      .circle(debugFrame.ball.x, debugFrame.ball.y, debugFrame.ball.radius)
+      .stroke({ color: 0x31a8ff, width: 1.6, alpha: 0.9 });
+
+    if (!debugFrame.collision) {
+      return;
+    }
+
+    const collision = debugFrame.collision;
+    const normalLength = 24;
+    this.debugShape
+      .circle(collision.pointX, collision.pointY, 3.6)
+      .fill({ color: collision.source === 'alpha' ? 0xff4b5c : 0xffd447, alpha: 0.95 });
+    this.debugShape
+      .moveTo(collision.pointX, collision.pointY)
+      .lineTo(
+        collision.pointX + collision.normalX * normalLength,
+        collision.pointY + collision.normalY * normalLength
+      )
+      .stroke({ color: 0xff4b5c, width: 2.2, alpha: 0.95 });
   }
 }
 

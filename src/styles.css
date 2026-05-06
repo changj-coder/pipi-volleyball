@@ -29,26 +29,10 @@ button {
 .shell {
   min-height: 100%;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: 1fr auto;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0)),
     #d9eee8;
-}
-
-.topbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 16px;
-  padding: 14px clamp(16px, 4vw, 32px);
-  border-bottom: 1px solid rgba(25, 33, 43, 0.12);
-  background: rgba(252, 255, 254, 0.76);
-  backdrop-filter: blur(12px);
-}
-
-.brand {
-  font-size: 18px;
-  font-weight: 800;
 }
 
 .scoreboard {
@@ -84,14 +68,11 @@ button {
   font-weight: 800;
 }
 
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
 .icon-button,
-.primary-button {
+.primary-button,
+.secondary-button,
+.key-bind-button,
+.select-control {
   min-height: 36px;
   border: 1px solid rgba(25, 33, 43, 0.18);
   border-radius: 8px;
@@ -112,6 +93,21 @@ button {
   font-weight: 700;
 }
 
+.secondary-button,
+.key-bind-button,
+.select-control {
+  padding: 0 12px;
+}
+
+.secondary-button,
+.key-bind-button {
+  font-weight: 800;
+}
+
+.select-control {
+  min-width: 150px;
+}
+
 .icon-button {
   width: 40px;
   display: grid;
@@ -119,11 +115,73 @@ button {
 }
 
 .icon-button:hover,
-.primary-button:hover {
+.primary-button:hover,
+.secondary-button:hover,
+.key-bind-button:hover {
   transform: translateY(-1px);
 }
 
+.icon-button.is-active,
+.secondary-button.is-active {
+  border-color: #195a9d;
+  background: #e9f4ff;
+}
+
+.settings-panel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  align-items: start;
+  width: min(100%, 640px);
+  max-height: min(42vh, 320px);
+  overflow: auto;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(25, 33, 43, 0.14);
+  background: rgba(246, 251, 255, 0.9);
+}
+
+.settings-panel[hidden] {
+  display: none;
+}
+
+.settings-group {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-title {
+  color: #334456;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.key-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(76px, 1fr));
+  gap: 8px;
+}
+
+.key-bind-label {
+  align-self: center;
+  color: #506171;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.key-bind-button {
+  min-width: 76px;
+  font-variant-numeric: tabular-nums;
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .game-wrap {
+  grid-row: 1;
   min-height: 0;
   display: grid;
   place-items: center;
@@ -148,6 +206,15 @@ button {
   image-rendering: pixelated;
 }
 
+.game-hud {
+  position: absolute;
+  inset: 12px 12px auto;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
 .message {
   position: absolute;
   inset: auto 16px 16px;
@@ -162,27 +229,108 @@ button {
   text-align: center;
   font-weight: 700;
   pointer-events: none;
+  z-index: 3;
 }
 
-.pause-overlay {
+.menu-overlay {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 36px);
   background: rgba(0, 0, 0, 0.48);
   color: #ffffff;
-  font-size: 28px;
-  font-weight: 900;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 140ms ease;
+  z-index: 5;
 }
 
-.pause-overlay.is-visible {
-  opacity: 1;
+.menu-overlay.is-visible {
+  display: flex;
+}
+
+.menu-panel {
+  width: min(100%, 700px);
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+
+.menu-title {
+  color: #ffffff;
+  font-size: clamp(28px, 6vw, 48px);
+  font-weight: 900;
+  text-align: center;
+  text-shadow: 0 3px 16px rgba(0, 0, 0, 0.32);
+}
+
+.menu-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.touch-controls {
+  position: absolute;
+  inset: auto 16px 16px;
+  display: none;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.touch-stick,
+.touch-hit-button {
+  border: 1px solid rgba(25, 33, 43, 0.2);
+  background: rgba(255, 255, 255, 0.68);
+  color: #19212b;
+  touch-action: none;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  backdrop-filter: blur(10px);
+}
+
+.touch-stick {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  border-radius: 999px;
+}
+
+.touch-stick::before {
+  content: "";
+  position: absolute;
+  inset: 22px;
+  border-radius: inherit;
+  border: 1px solid rgba(25, 33, 43, 0.16);
+}
+
+.touch-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #195a9d;
+  box-shadow: 0 8px 22px rgba(25, 90, 157, 0.24);
+  transform: translate(-50%, -50%);
+}
+
+.touch-hit-button {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  font-size: 18px;
+  font-weight: 900;
 }
 
 .controls {
+  grid-row: 2;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -205,12 +353,47 @@ button {
 }
 
 @media (max-width: 680px) {
-  .topbar {
-    grid-template-columns: 1fr;
-    justify-items: center;
+  .key-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (hover: none), (pointer: coarse), (max-width: 760px) {
+  .game-wrap {
+    align-items: center;
+    padding: 8px;
   }
 
-  .actions {
-    justify-content: center;
+  .game-frame {
+    width: min(100%, calc(100vh * 1.42));
+  }
+
+  .message {
+    inset: 10px 10px auto;
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .game-hud {
+    inset: 8px 8px auto;
+  }
+
+  .scoreboard {
+    transform: scale(0.86);
+    transform-origin: top center;
+  }
+
+  .settings-panel {
+    max-height: min(48vh, 360px);
+  }
+
+  .touch-controls {
+    display: flex;
+  }
+
+  .controls {
+    padding-top: 8px;
+    font-size: 12px;
   }
 }

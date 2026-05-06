@@ -5,14 +5,28 @@ import {
   PLAYER_GROUND_Y,
   PLAYER_RADIUS_X,
 } from './constants';
-import type { Ball, InputState, Player } from './types';
+import type { AiDifficulty, Ball, InputState, Player } from './types';
+
+const AI_STRENGTH: Record<AiDifficulty, number> = {
+  easy: 0.25,
+  normal: 0.5,
+  hard: 1,
+};
 
 export class AiController {
   private reactionFrames = 0;
   private targetOffset = 18;
   private hesitationFrames = 0;
+  private difficulty: AiDifficulty = 'hard';
+
+  setDifficulty(difficulty: AiDifficulty): void {
+    this.difficulty = difficulty;
+    this.reactionFrames = 0;
+    this.hesitationFrames = 0;
+  }
 
   decide(cpu: Player, ball: Ball): InputState {
+    const strength = AI_STRENGTH[this.difficulty];
     const input: InputState = {
       left: false,
       right: false,
@@ -27,9 +41,12 @@ export class AiController {
     }
 
     if (this.reactionFrames <= 0) {
-      this.reactionFrames = 28 + Math.floor(Math.random() * 32);
-      this.targetOffset = (Math.random() - 0.5) * 112;
-      this.hesitationFrames = Math.random() < 0.38 ? 30 + Math.floor(Math.random() * 38) : 0;
+      this.reactionFrames = Math.round((28 + Math.floor(Math.random() * 32)) / strength);
+      this.targetOffset = (Math.random() - 0.5) * (112 / strength);
+      this.hesitationFrames =
+        Math.random() < Math.min(0.86, 0.38 / strength)
+          ? Math.round((30 + Math.floor(Math.random() * 38)) / strength)
+          : 0;
     } else {
       this.reactionFrames -= 1;
     }
@@ -39,7 +56,7 @@ export class AiController {
     }
 
     const targetX = this.chooseTargetX(ball) + this.targetOffset;
-    const deadZone = 12;
+    const deadZone = 12 / strength;
 
     if (cpu.x < targetX - deadZone) {
       input.right = true;
@@ -55,6 +72,14 @@ export class AiController {
     input.up = !isHesitating && ballIsNear && ball.y < cpu.y + 12 && ball.vy >= -3.5 && Math.random() > 0.36;
     input.hit = !isHesitating && ballIsNear && ball.x > NET_X - 32 && Math.random() > 0.44;
     input.down = ball.y > cpu.y + 34 && ball.x > NET_X;
+
+    if (strength < 1) {
+      input.left = input.left && Math.random() < strength;
+      input.right = input.right && Math.random() < strength;
+      input.up = input.up && Math.random() < strength;
+      input.down = input.down && Math.random() < strength;
+      input.hit = input.hit && Math.random() < strength;
+    }
 
     return input;
   }

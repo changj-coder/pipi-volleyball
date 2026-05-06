@@ -5,6 +5,7 @@ export const NET_X = GAME_WIDTH / 2;
 export const NET_WIDTH = 18;
 export const NET_HEIGHT = 92;
 export const NET_HITBOX_WIDTH = 8;
+export const NET_COLLISION_RADIUS = 4;
 export const NET_TOP = GROUND_Y - NET_HEIGHT;
 export const WINNING_SCORE = 5;
 
@@ -19,7 +20,7 @@ export const PLAYER_JUMP_SPEED = -8.8;
 export const PLAYER_FAST_FALL = 0.55;
 export const PLAYER_GRAVITY = 0.38;
 
-export const BALL_RADIUS = 44;
+export const BALL_RADIUS = 32;
 export const BALL_GRAVITY = 0.168;
 export const BALL_MAX_SPEED_X = 5.88;
 export const BALL_MAX_SPEED_Y = 6.72;

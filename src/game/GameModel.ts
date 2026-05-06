@@ -12,8 +12,6 @@ import {
   BALL_RADIUS,
   GAME_WIDTH,
   GROUND_Y,
-  NET_TOP,
-  NET_HITBOX_WIDTH,
   NET_WIDTH,
   NET_X,
   PLAYER_FAST_FALL,
@@ -26,10 +24,23 @@ import {
   PLAYER_RADIUS_X,
   PLAYER_RADIUS_Y,
   PLAYER_SPEED,
-  ROUND_RESET_FRAMES,
   WINNING_SCORE,
 } from './constants';
-import type { Ball, InputState, MatchState, Player, Score, Side } from './types';
+import {
+  createFallbackNetDebug,
+  createFallbackNetCollision,
+  NetCollisionMask,
+} from './NetCollisionMask';
+import type {
+  Ball,
+  HitboxDebugFrame,
+  InputState,
+  MatchState,
+  NetCollision,
+  Player,
+  Score,
+  Side,
+} from './types';
 
 type TickResult = {
   scoredBy: Side | null;
@@ -46,8 +57,23 @@ export class GameModel {
   state: MatchState = 'idle';
   servingSide: Side = 'left';
   roundMessage = '按「開始」進入比賽';
+  private netCollisionMask: NetCollisionMask | null = null;
+  private lastNetCollision: NetCollision | null = null;
+  private lastNetCollisionFrames = 0;
 
-  private resetTimer = 0;
+  setNetCollisionMask(mask: NetCollisionMask | null): void {
+    this.netCollisionMask = mask;
+  }
+
+  getHitboxDebugFrame(enabled: boolean): HitboxDebugFrame {
+    return {
+      enabled,
+      ball: this.ball,
+      netMaskPixels: enabled && this.netCollisionMask ? this.netCollisionMask.getDebugPixels() : [],
+      fallbackNet: this.netCollisionMask?.getFallbackDebug() ?? createFallbackNetDebug(),
+      collision: enabled && this.lastNetCollisionFrames > 0 ? this.lastNetCollision : null,
+    };
+  }
 
   start(): void {
     this.score.player = 0;
@@ -208,12 +234,27 @@ export class GameModel {
       return;
     }
 
-    this.ball.vy += BALL_GRAVITY;
-    this.ball.vx = clamp(this.ball.vx, -BALL_POWER_MAX_SPEED_X, BALL_POWER_MAX_SPEED_X);
-    this.ball.vy = clamp(this.ball.vy, -BALL_POWER_MAX_SPEED_Y, BALL_POWER_MAX_SPEED_Y);
-    this.ball.x += this.ball.vx;
-    this.ball.y += this.ball.vy;
+    if (this.lastNetCollisionFrames > 0) {
+      this.lastNetCollisionFrames -= 1;
+    }
 
+    const stepCount = Math.max(
+      1,
+      Math.ceil(Math.max(Math.abs(this.ball.vx), Math.abs(this.ball.vy)) / 5)
+    );
+
+    for (let step = 0; step < stepCount; step += 1) {
+      this.ball.vy += BALL_GRAVITY / stepCount;
+      this.ball.vx = clamp(this.ball.vx, -BALL_POWER_MAX_SPEED_X, BALL_POWER_MAX_SPEED_X);
+      this.ball.vy = clamp(this.ball.vy, -BALL_POWER_MAX_SPEED_Y, BALL_POWER_MAX_SPEED_Y);
+      this.ball.x += this.ball.vx / stepCount;
+      this.ball.y += this.ball.vy / stepCount;
+      this.resolveWorldCollision();
+      this.resolveNetCollision();
+    }
+  }
+
+  private resolveWorldCollision(): void {
     if (this.ball.x - BALL_RADIUS < 0) {
       this.ball.x = BALL_RADIUS;
       this.ball.vx = Math.abs(this.ball.vx) * BALL_BOUNCE;
@@ -228,36 +269,33 @@ export class GameModel {
       this.ball.y = BALL_RADIUS;
       this.ball.vy = Math.abs(this.ball.vy) * BALL_BOUNCE;
     }
-
-    this.resolveNetCollision();
   }
 
   private resolveNetCollision(): void {
-    const netLeft = NET_X - NET_HITBOX_WIDTH / 2;
-    const netRight = NET_X + NET_HITBOX_WIDTH / 2;
-    const ballBottom = this.ball.y + BALL_RADIUS;
-    const ballTop = this.ball.y - BALL_RADIUS;
-    const overlapsNetX = this.ball.x + BALL_RADIUS > netLeft && this.ball.x - BALL_RADIUS < netRight;
-    const overlapsNetY = ballBottom > NET_TOP && ballTop < GROUND_Y;
+    const collision =
+      this.netCollisionMask?.collideCircle(this.ball) ??
+      (this.netCollisionMask ? null : createFallbackNetCollision(this.ball));
 
-    if (!overlapsNetX || !overlapsNetY) {
+    if (!collision) {
       return;
     }
 
-    if (ballBottom <= NET_TOP + 8 && this.ball.vy > 0) {
-      this.ball.y = NET_TOP - BALL_RADIUS;
-      this.ball.vy = -Math.abs(this.ball.vy) * 0.62;
-      this.ball.vx += this.ball.x < NET_X ? -0.45 : 0.45;
+    this.lastNetCollision = collision;
+    this.lastNetCollisionFrames = 12;
+    this.ball.x += collision.normalX * (collision.penetration + 0.2);
+    this.ball.y += collision.normalY * (collision.penetration + 0.2);
+
+    const incomingSpeed =
+      this.ball.vx * collision.normalX + this.ball.vy * collision.normalY;
+    if (incomingSpeed >= 0) {
       return;
     }
 
-    if (this.ball.x < NET_X) {
-      this.ball.x = netLeft - BALL_RADIUS - 1;
-      this.ball.vx = -Math.abs(this.ball.vx) * BALL_BOUNCE;
-    } else {
-      this.ball.x = netRight + BALL_RADIUS + 1;
-      this.ball.vx = Math.abs(this.ball.vx) * BALL_BOUNCE;
-    }
+    const bounce = 1 + BALL_BOUNCE;
+    this.ball.vx -= bounce * incomingSpeed * collision.normalX;
+    this.ball.vy -= bounce * incomingSpeed * collision.normalY;
+    this.ball.vx = clamp(this.ball.vx, -BALL_POWER_MAX_SPEED_X, BALL_POWER_MAX_SPEED_X);
+    this.ball.vy = clamp(this.ball.vy, -BALL_POWER_MAX_SPEED_Y, BALL_POWER_MAX_SPEED_Y);
   }
 
   private resolvePlayerBallCollision(player: Player, input: InputState): boolean {
@@ -309,20 +347,9 @@ export class GameModel {
 
     if (isPowerHit) {
       player.hitCooldown = 18;
-      const desiredDirection = input.left ? -1 : input.right ? 1 : player.facing;
-      const attackDirection =
-        player.side === 'left' ? Math.max(1, desiredDirection) : Math.min(-1, desiredDirection);
-      const lift = input.down ? 0.25 : 1;
-      this.ball.vx = clamp(
-        attackDirection * BALL_POWER_SPEED_X,
-        -BALL_POWER_MAX_SPEED_X,
-        BALL_POWER_MAX_SPEED_X
-      );
-      this.ball.vy = clamp(
-        -BALL_POWER_SPEED_Y * lift,
-        -BALL_POWER_MAX_SPEED_Y,
-        BALL_POWER_MAX_SPEED_Y
-      );
+      const aim = getPowerHitAim(player, input);
+      this.ball.vx = clamp(aim.x, -BALL_POWER_MAX_SPEED_X, BALL_POWER_MAX_SPEED_X);
+      this.ball.vy = clamp(aim.y, -BALL_POWER_MAX_SPEED_Y, BALL_POWER_MAX_SPEED_Y);
     }
 
     return true;
@@ -372,4 +399,44 @@ export class GameModel {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function getPowerHitAim(player: Player, input: InputState): { x: number; y: number } {
+  const defaultDirection = player.side === 'left' ? 1 : -1;
+  let xDirection = input.left ? -1 : input.right ? 1 : defaultDirection;
+  let yDirection = input.down ? 1 : -1;
+
+  if (input.up) {
+    yDirection = -1;
+  }
+
+  if (player.isCpu) {
+    xDirection = defaultDirection;
+  }
+
+  if (!input.left && !input.right && !input.up && !input.down) {
+    return {
+      x: defaultDirection * BALL_POWER_SPEED_X,
+      y: -BALL_POWER_SPEED_Y,
+    };
+  }
+
+  if ((input.up || input.down) && !input.left && !input.right) {
+    return {
+      x: xDirection * BALL_POWER_SPEED_Y,
+      y: yDirection * BALL_POWER_SPEED_Y,
+    };
+  }
+
+  if ((input.left || input.right) && !(input.up || input.down)) {
+    return {
+      x: xDirection * BALL_POWER_SPEED_X,
+      y: 0,
+    };
+  }
+
+  return {
+    x: xDirection * BALL_POWER_SPEED_Y,
+    y: yDirection * BALL_POWER_SPEED_Y,
+  };
 }

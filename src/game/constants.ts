@@ -1,0 +1,33 @@
+export const GAME_WIDTH = 432;
+export const GAME_HEIGHT = 304;
+export const GROUND_Y = 268;
+export const NET_X = GAME_WIDTH / 2;
+export const NET_WIDTH = 18;
+export const NET_HEIGHT = 92;
+export const NET_HITBOX_WIDTH = 8;
+export const NET_TOP = GROUND_Y - NET_HEIGHT;
+export const WINNING_SCORE = 5;
+
+export const PLAYER_RADIUS_X = 22;
+export const PLAYER_RADIUS_Y = 28;
+export const PLAYER_HITBOX_RADIUS_X = 15;
+export const PLAYER_HITBOX_RADIUS_Y = 18;
+export const PLAYER_HITBOX_OFFSET_Y = 8;
+export const PLAYER_GROUND_Y = GROUND_Y - PLAYER_RADIUS_Y;
+export const PLAYER_SPEED = 3.15;
+export const PLAYER_JUMP_SPEED = -8.8;
+export const PLAYER_FAST_FALL = 0.55;
+export const PLAYER_GRAVITY = 0.38;
+
+export const BALL_RADIUS = 44;
+export const BALL_GRAVITY = 0.168;
+export const BALL_MAX_SPEED_X = 5.88;
+export const BALL_MAX_SPEED_Y = 6.72;
+export const BALL_POWER_MAX_SPEED_X = 13.8;
+export const BALL_POWER_MAX_SPEED_Y = 11.4;
+export const BALL_BOUNCE = 0.78;
+export const BALL_PLAYER_BOUNCE = 3.78;
+export const BALL_POWER_BONUS = 8.4;
+export const BALL_POWER_SPEED_X = 13.2;
+export const BALL_POWER_SPEED_Y = 9.4;
+export const ROUND_RESET_FRAMES = 70;

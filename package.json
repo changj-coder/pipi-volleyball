@@ -1,0 +1,20 @@
+{
+  "name": "pipi-volleyball",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc && vite build",
+    "package": "npm run build && python scripts/package_project.py",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "gifuct-js": "^2.1.2",
+    "pixi.js": "^8.8.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.3.4"
+  }
+}
